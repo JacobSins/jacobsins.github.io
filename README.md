@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login & Register</title>
+    <title>Login Panel</title>
     <style>
         body {
             background-color: #272930;
@@ -85,99 +86,36 @@
     </label>
 
     <button onclick="login()">Login</button>
-    <button onclick="showRegister()">Register</button>
-
-    <div class="credits">
-        Owner: Jacob Sins (Developer) <br>
-        Special Thanks: Roberto Denaro
-    </div>
 </div>
 
-<!-- Register Container -->
-<div class="container hidden" id="register-container">
-    <h2>Register</h2>
-
-    <label for="reg-username">Username</label>
-    <input type="text" id="reg-username" placeholder="Enter your username">
-
-    <label for="reg-password">Password</label>
-    <input type="password" id="reg-password" placeholder="Enter your password">
-
-    <label for="reg-repeat-password">Repeat Password</label>
-    <input type="password" id="reg-repeat-password" placeholder="Repeat your password">
-
-    <label for="reg-email">Email</label>
-    <input type="email" id="reg-email" placeholder="Enter your email">
-
-    <button onclick="register()">Register</button>
-    <button onclick="showLogin()">Cancel</button>
+<!-- Key Generation Container -->
+<div class="container hidden" id="keygen-container">
+    <h2>Generate Key</h2>
+    <label for="key-duration">Select Key Duration</label>
+    <select id="key-duration">
+        <option value="1d">1 Day</option>
+        <option value="1w">1 Week</option>
+        <option value="1m">1 Month</option>
+        <option value="lifetime">Lifetime</option>
+    </select>
+    <button onclick="generateKey()">Generate Key</button>
+    <p id="generated-key"></p>
 </div>
 
 <!-- Post-login Container -->
-<div class="container hidden" id="inject-container">
+<div class="container hidden" id="admin-container">
     <h2>Welcome!</h2>
-
-    <!-- License Key Input -->
-    <label for="license-key">License Key</label>
-    <input type="text" id="license-key" placeholder="Enter your license key">
-
-    <button onclick="validateLicenseKey()">Validate License Key</button>
-
-    <div id="inject-section" class="hidden">
-        <h2>Inject Section</h2>
-        <button onclick="inject()">Inject</button>
+    <div id="admin-section">
+        <h2>Admin Panel</h2>
+        <button onclick="performAction()">Perform Action</button>
+        <button onclick="showKeygen()">Generate Key</button>
     </div>
 </div>
 
 <script>
-    // Simulated in-memory storage for credentials
-    let userCredentials = {};
-    const validLicenseKey = "ABC123XYZ";  // Predefined valid license key
-
-    function showRegister() {
-        document.getElementById('login-container').classList.add('hidden');
-        document.getElementById('register-container').classList.remove('hidden');
-    }
-
-    function showLogin() {
-        document.getElementById('register-container').classList.add('hidden');
-        document.getElementById('login-container').classList.remove('hidden');
-    }
-
-    function isValidEmail(email) {
-        const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return pattern.test(email);
-    }
-
-    function register() {
-        const username = document.getElementById('reg-username').value;
-        const password = document.getElementById('reg-password').value;
-        const repeatPassword = document.getElementById('reg-repeat-password').value;
-        const email = document.getElementById('reg-email').value;
-
-        if (password !== repeatPassword) {
-            alert("Passwords do not match!");
-            return;
-        }
-
-        if (!isValidEmail(email)) {
-            alert("Invalid email format!");
-            return;
-        }
-
-        // Save the credentials
-        userCredentials[username] = password;
-        alert("Registration Successful!");
-
-        // Clear inputs
-        document.getElementById('reg-username').value = '';
-        document.getElementById('reg-password').value = '';
-        document.getElementById('reg-repeat-password').value = '';
-        document.getElementById('reg-email').value = '';
-
-        // Show login form
-        showLogin();
-    }
+    // Simulated in-memory storage for credentials and keys
+    let userCredentials = { "admin": "password123" };  // Example credentials
+    let validKeys = {};
 
     function login() {
         const username = document.getElementById('login-username').value;
@@ -185,34 +123,88 @@
 
         if (userCredentials[username] && userCredentials[username] === password) {
             alert("Login Successful!");
-            showInjectPage();
+            showAdminPanel();
+            sendNotification("Login Successful", "You have successfully logged in.");
         } else {
             alert("Incorrect Username or Password!");
         }
     }
 
-    // Show inject page after successful login
-    function showInjectPage() {
+    // Show admin panel after successful login
+    function showAdminPanel() {
         document.getElementById('login-container').classList.add('hidden');
-        document.getElementById('inject-container').classList.remove('hidden');
+        document.getElementById('admin-container').classList.remove('hidden');
     }
 
-    // Validate the entered license key
-    function validateLicenseKey() {
-        const enteredKey = document.getElementById('license-key').value;
+    // Show key generation panel
+    function showKeygen() {
+        document.getElementById('admin-container').classList.add('hidden');
+        document.getElementById('keygen-container').classList.remove('hidden');
+    }
 
-        if (enteredKey === validLicenseKey) {
-            alert("License Key Validated Successfully!");
-            document.getElementById('inject-section').classList.remove('hidden');
-        } else {
-            alert("Invalid License Key!");
+    // Generate a key based on selected duration
+    function generateKey() {
+        const duration = document.getElementById('key-duration').value;
+        const key = generateRandomKey();
+        const expiryDate = calculateExpiryDate(duration);
+        validKeys[key] = expiryDate;
+
+        document.getElementById('generated-key').textContent = `Generated Key: ${key} (Expires: ${expiryDate.toDateString()})`;
+        sendNotification("Key Generated", `Generated Key: ${key} (Expires: ${expiryDate.toDateString()})`);
+    }
+
+    // Generate a random key
+    function generateRandomKey() {
+        return 'KEY-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    }
+
+    // Calculate expiry date based on duration
+    function calculateExpiryDate(duration) {
+        const now = new Date();
+        switch (duration) {
+            case '1d':
+                now.setDate(now.getDate() + 1);
+                break;
+            case '1w':
+                now.setDate(now.getDate() + 7);
+                break;
+            case '1m':
+                now.setMonth(now.getMonth() + 1);
+                break;
+            case 'lifetime':
+                // Lifetime doesn't have an expiry date
+                return 'Never';
+            default:
+                return now;
+        }
+        return now;
+    }
+
+    // Action for admin button
+    function performAction() {
+        alert("Action performed!");
+        sendNotification("Action Performed", "The action was successfully performed.");
+    }
+
+    // Function to send browser notifications
+    function sendNotification(title, body) {
+        if (Notification.permission === 'granted') {
+            new Notification(title, { body });
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    new Notification(title, { body });
+                }
+            });
         }
     }
 
-    // Action for inject button
-    function inject() {
-        alert("Inject button clicked!");
-    }
+    // Request permission for notifications on page load
+    window.onload = () => {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    };
 </script>
 
 </body>
